@@ -1,0 +1,129 @@
+#!/bin/sh
+# ----------------------------------------------------------------------------
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+# ----------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------
+# Apache Maven Wrapper startup batch script, version 3.3.2
+#
+# Optional ENV vars
+#   MVNW_REPOURL - repo url base for downloading maven distribution
+#   MVNW_USERNAME/MVNW_PASSWORD - user and password for downloading maven
+#   MVNW_VERBOSE - true: enable verbose log; others: silence the output
+# ----------------------------------------------------------------------------
+
+set -euf
+[ "${MVNW_VERBOSE-}" != true ] || set -x
+
+# OS specific support.
+native_path() { printf %s\\n "$1"; }
+case "$(uname)" in
+CYGWIN* | MINGW*)
+  [ -z "${JAVA_HOME-}" ] || JAVA_HOME="$(cygpath --unix "$JAVA_HOME")"
+  native_path() { cygpath --path --windows "$1"; }
+  ;;
+esac
+
+# set JAVA_CMD
+if [ -n "${JAVA_HOME-}" ]; then
+  if [ -x "$JAVA_HOME/jre/sh/java" ]; then
+    JAVA_CMD="$JAVA_HOME/jre/sh/java"
+  elif [ -x "$JAVA_HOME/bin/java" ]; then
+    JAVA_CMD="$JAVA_HOME/bin/java"
+  else
+    echo "ERROR: JAVA_HOME is set to an invalid directory: $JAVA_HOME" >&2
+    exit 1
+  fi
+else
+  JAVA_CMD="$(command -v java)" || {
+    echo "ERROR: JAVA_HOME is not set and 'java' command not found" >&2
+    exit 1
+  }
+fi
+
+# hash string like  <groupId>/<artifactId>/<version>
+distributionUrl=
+wrapperUrl=
+while IFS="=" read -r key value; do
+  case "${key-}" in
+  distributionUrl) distributionUrl="${value-}" ;;
+  wrapperUrl) wrapperUrl="${value-}" ;;
+  esac
+done <"${0%/*}/.mvn/wrapper/maven-wrapper.properties"
+[ -n "${distributionUrl-}" ] || {
+  echo "ERROR: distributionUrl is not set in maven-wrapper.properties" >&2
+  exit 1
+}
+
+# prepare directory
+MAVEN_PROJECTBASEDIR="${0%/*}"
+MAVEN_PROJECTBASEDIR="$(cd "$MAVEN_PROJECTBASEDIR" && pwd)"
+MVNW_DIST_DIR="$MAVEN_PROJECTBASEDIR/.mvn/wrapper/dists"
+
+# Use wrapper jar if available
+WRAPPER_JAR="$MAVEN_PROJECTBASEDIR/.mvn/wrapper/maven-wrapper.jar"
+if [ -r "$WRAPPER_JAR" ]; then
+  exec "$JAVA_CMD" \
+    ${MVNW_JAVA_OPTIONS-} ${MAVEN_OPTS-} \
+    "-Dmaven.multiModuleProjectDirectory=${MAVEN_PROJECTBASEDIR}" \
+    -jar "$WRAPPER_JAR" "$@"
+fi
+
+# Try downloading wrapper jar
+if [ -n "${wrapperUrl-}" ]; then
+  if command -v wget >/dev/null; then
+    wget -q -O "$WRAPPER_JAR" "$wrapperUrl" 2>/dev/null
+  elif command -v curl >/dev/null; then
+    curl -fsSL -o "$WRAPPER_JAR" "$wrapperUrl" 2>/dev/null
+  fi
+  if [ -r "$WRAPPER_JAR" ]; then
+    exec "$JAVA_CMD" \
+      ${MVNW_JAVA_OPTIONS-} ${MAVEN_OPTS-} \
+      "-Dmaven.multiModuleProjectDirectory=${MAVEN_PROJECTBASEDIR}" \
+      -jar "$WRAPPER_JAR" "$@"
+  fi
+fi
+
+# Fallback: download Maven distribution directly
+mkdir -p "$MVNW_DIST_DIR"
+MVNW_DIST_ZIP="$MVNW_DIST_DIR/maven-dist.zip"
+if [ ! -d "$MVNW_DIST_DIR"/apache-maven-* ]; then
+  echo "Downloading Maven from $distributionUrl..."
+  if command -v wget >/dev/null; then
+    wget -q -O "$MVNW_DIST_ZIP" "$distributionUrl"
+  elif command -v curl >/dev/null; then
+    curl -fsSL -o "$MVNW_DIST_ZIP" "$distributionUrl"
+  else
+    echo "ERROR: Neither wget nor curl found to download Maven" >&2
+    exit 1
+  fi
+  unzip -q -d "$MVNW_DIST_DIR" "$MVNW_DIST_ZIP"
+  rm -f "$MVNW_DIST_ZIP"
+fi
+
+# Find extracted Maven
+MAVEN_HOME="$(find "$MVNW_DIST_DIR" -maxdepth 1 -name 'apache-maven-*' -type d | head -1)"
+[ -n "$MAVEN_HOME" ] || {
+  echo "ERROR: Could not find or download Maven distribution." >&2
+  exit 1
+}
+
+exec "$MAVEN_HOME/bin/mvn" \
+  ${MVNW_JAVA_OPTIONS-} ${MAVEN_OPTS-} \
+  "-Dmaven.multiModuleProjectDirectory=${MAVEN_PROJECTBASEDIR}" \
+  "$@"

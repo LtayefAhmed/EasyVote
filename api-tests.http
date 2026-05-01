@@ -1,0 +1,59 @@
+### ════════════════════════════════════════════════
+### EasyVote API - Tests
+### Backend tourne sur http://localhost:8082
+### ════════════════════════════════════════════════
+
+@baseUrl = http://localhost:8082/api
+@email = ahmed@test.com
+@password = password123
+
+### 1. Register - Création de compte
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}",
+  "fullName": "Ahmed Ltayef",
+  "studentId": "STU001"
+}
+
+### 2. Verify OTP - Remplace 123456 par le code reçu dans Mailtrap
+POST {{baseUrl}}/auth/verify-otp
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "code": "422384"
+}
+
+### 3. Login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+### 4. Resend OTP
+POST {{baseUrl}}/auth/resend-otp
+Content-Type: application/json
+
+{
+  "email": "{{email}}"
+}
+
+### 5. Get current user (collez le accessToken de la réponse login/verify-otp)
+@accessToken = eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhaG1lZEB0ZXN0LmNvbSIsInVzZXJJZCI6MSwicm9sZSI6IlNUVURFTlQiLCJmdWxsTmFtZSI6IkFobWVkIEx0YXllZiIsImlhdCI6MTc3NzYxMTg1OCwiZXhwIjoxNzc3Njk4MjU4fQ.SIrEG8RCiVlspa_0EYHrT8BY3aUKwjbq03Ba6qn2rCAhlrvy_0ObbmW7YbJ55tWPlTr5CkBzE85PwInR_hAJPg
+
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{accessToken}}
+
+### 6. Refresh Token
+POST {{baseUrl}}/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "COLLE_LE_REFRESH_TOKEN_ICI"
+}
