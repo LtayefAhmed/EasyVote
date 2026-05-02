@@ -88,6 +88,12 @@ public class SecurityConfig {
                         .requestMatchers("/ws/**").permitAll()
                         .requestMatchers("/uploads/**").permitAll()
                         .requestMatchers("/error").permitAll()
+                        .requestMatchers(
+                                "/api/campaigns/candidates",
+                                "/api/campaigns/candidates/*/comments",
+                                "/api/campaigns/candidates/*/questions",
+                                "/api/campaigns/candidates/*/announcements"
+                        ).permitAll()
 
                         // Admin-only endpoints
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")

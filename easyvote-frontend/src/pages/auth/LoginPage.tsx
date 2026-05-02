@@ -52,7 +52,7 @@ export default function EasyVoteLogin() {
     setIsLoading(true);
     try {
       const response = await authService.login({ email, password });
-      const authData = response.data;
+      const authData = response.data as any;
 
       // Store in Zustand (which also persists to localStorage)
       useAuthStore.getState().login(
