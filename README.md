@@ -280,5 +280,4 @@ Ce projet est sous licence **MIT**. Voir le fichier [LICENSE](LICENSE) pour plus
 ## 🙏 Remerciements
 
 - À l'équipe pédagogique pour le cadrage du projet.
-- À Anthropic pour Claude (Code et Antigravity Agent).
 - À la communauté open-source pour les excellents frameworks utilisés.
