@@ -8,10 +8,11 @@ export const ROUTES = {
   VERIFY_OTP: "/verify-otp",
   DASHBOARD: "/dashboard",
   ELECTIONS: "/elections",
-  CANDIDATES: "/elections/:id/candidates",
   VOTE: "/elections/:id/vote",
   RESULTS: "/elections/:id/results",
   ADMIN: "/admin",
+  CANDIDATE: "/candidate",
+  STUDENT:"/student"
 }
 
 export const APP_NAME = "EasyVote"

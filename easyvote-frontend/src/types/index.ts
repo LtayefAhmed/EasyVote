@@ -1,10 +1,10 @@
 export type Role = "STUDENT" | "CANDIDATE" | "ADMIN";
 
-export type ElectionStatus = "DRAFT" | "CAMPAIGN_ACTIVE" | "VOTE_ACTIVE" | "CLOSED";
+export type ElectionStatus = "UPCOMING" | "ONGOING" | "COMPLETED";
 
-export type CandidateStatus = "PENDING" | "VALIDATED" | "REJECTED";
+export type CandidateStatus = "PENDING" | "APPROVED" | "REJECTED";
 
-export type NotificationType = "CAMPAIGN_STARTED" | "VOTE_STARTED" | "VOTE_ENDED" | "CANDIDATE_VALIDATED" | "NEW_COMMENT" | "NEW_QUESTION" | "QUESTION_ANSWERED" | "RESULTS_PUBLISHED";
+export type NotificationType = "INFO" | "ELECTION_START" | "ELECTION_END" | "CANDIDATE_APPROVED";
 
 export interface User {
   id: number;
@@ -55,172 +55,14 @@ export interface PageResponse<T> {
   last: boolean;
 }
 
-// ───── Module 1 : Campaigns ─────
-
-export interface Election {
-  id: number;
-  title: string;
-  description: string;
-  campaignStart: string;
-  campaignEnd: string;
-  voteStart: string;
-  voteEnd: string;
-  status: ElectionStatus;
-  totalCandidates: number;
-  totalVotes: number;
-  campaignActive: boolean;
-  voteActive: boolean;
-  createdAt: string;
-}
-
-export interface Candidate {
-  id: number;
-  userId: number;
-  userFullName: string;
-  userEmail: string;
-  electionId: number;
-  electionTitle: string;
-  slogan: string;
-  program: string;
-  photoUrl?: string;
-  status: CandidateStatus;
-  likesCount: number;
-  commentsCount: number;
-  questionsCount: number;
-  likedByMe: boolean;
-  createdAt: string;
-}
-
-export interface Comment {
-  id: number;
-  candidateId: number;
-  userId: number;
-  userFullName: string;
-  userInitials: string;
-  content: string;
-  createdAt: string;
-  mine: boolean;
-}
-
-export interface Question {
-  id: number;
-  candidateId: number;
-  userId: number;
-  userFullName: string;
-  userInitials: string;
-  content: string;
-  answer?: string;
-  createdAt: string;
-  answeredAt?: string;
-  answered: boolean;
-}
-
-export interface Announcement {
-  id: number;
-  candidateId: number;
-  candidateName: string;
-  title: string;
-  content: string;
-  createdAt: string;
-}
-
-export interface LikeToggle {
-  liked: boolean;
-  totalLikes: number;
-}
-
-// ───── Module 2 : Vote ─────
-
-export interface VoteStatusResponse {
-  hasVoted: boolean;
-  canVote: boolean;
-  voteEndAt: string;
-  message: string;
-}
-
-export interface VoteResponse {
-  message: string;
-  confirmationCode: string;
-  votedAt: string;
-}
-
-export interface CandidateVoteResult {
-  candidateId: number;
-  fullName: string;
-  slogan: string;
-  photoUrl?: string;
-  votes: number;
-  percentage: number;
-  rank: number;
-}
-
-export interface ElectionResultsResponse {
-  electionId: number;
-  electionTitle: string;
-  status: ElectionStatus;
-  totalVotes: number;
-  totalEligibleVoters: number;
-  participationRate: number;
-  results: CandidateVoteResult[];
-  computedAt: string;
-  isFinal: boolean;
-}
-
-export interface HourlyVoteStat {
-  hour: string;
-  count: number;
-}
-
-export interface ElectionStatsResponse {
-  electionId: number;
-  totalVotes: number;
-  totalEligibleVoters: number;
-  participationRate: number;
-  votesLastHour: number;
-  hourlyDistribution: HourlyVoteStat[];
-  currentRanking: CandidateVoteResult[];
-  updatedAt: string;
-}
-
-// ───── Module 3 : Chatbot & Notifications ─────
-
-export type ChatRole = "USER" | "ASSISTANT"
-
-export type AppNotificationType =
-  | "CAMPAIGN_STARTED"
-  | "VOTE_STARTED"
-  | "VOTE_ENDED"
-  | "CANDIDATE_VALIDATED"
-  | "NEW_COMMENT"
-  | "NEW_QUESTION"
-  | "QUESTION_ANSWERED"
-  | "RESULTS_PUBLISHED"
-
-export interface ChatHistoryItem {
-  id: number
-  role: ChatRole
-  content: string
-  createdAt: string
-}
-
-export interface ChatMessageResponse {
-  sessionId: string
-  userMessage: string
-  botResponse: string
-  source: "RULES" | "AI"
-  timestamp: string
-  suggestedQuestions: string[]
-}
-
-export interface AppNotification {
-  id: number
-  type: AppNotificationType
-  title: string
-  content: string
-  read: boolean
-  link: string | null
-  createdAt: string
-}
+// Additional Types Placeholder
+export interface Election {}
+export interface Candidate {}
+export interface Vote {}
+export interface Comment {}
+export interface Question {}
+export interface Notification {}
+export interface ChatMessage {}
 
 // Requests
 export interface RegisterRequest {
@@ -238,15 +80,4 @@ export interface LoginRequest {
 export interface OtpVerifyRequest {
   email: string;
   code: string;
-}
-
-export interface ApplyCandidateRequest {
-  electionId: number;
-  slogan: string;
-  program: string;
-}
-
-export interface UpdateCandidateRequest {
-  slogan?: string;
-  program?: string;
 }
