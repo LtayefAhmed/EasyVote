@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Mail,
   ArrowLeft,
   CheckCircle,
   Loader2,
@@ -11,6 +11,9 @@ import {
   Send,
   AtSign,
 } from "lucide-react";
+import { useAuthStore } from "@/store/authStore";
+import { authService } from "@/services/authService";
+import { toast } from "sonner";
 
 /**
  * OtpVerificationPage — EasyVote
@@ -26,24 +29,6 @@ import {
  * ------------------------------------------------------------------
  */
 
-// Récupération de l'email depuis location.state (React Router) ou URL params
-// Fallback : "votre email" si absent
-const getUserEmail = (): string => {
-  if (typeof window === "undefined") return "votre email";
-  try {
-    // 1. Tentative via URL search params (?email=...)
-    const params = new URLSearchParams(window.location.search);
-    const fromUrl = params.get("email");
-    if (fromUrl) return decodeURIComponent(fromUrl);
-    // 2. Tentative via history.state (React Router style location.state)
-    const state = (window.history.state && window.history.state.usr) || null;
-    if (state && state.email) return state.email;
-  } catch {
-    /* noop */
-  }
-  return "votre email";
-};
-
 // Formatage mm:ss à partir d'un nombre de secondes
 const formatTime = (totalSeconds: number): string => {
   const m = Math.floor(totalSeconds / 60);
@@ -54,10 +39,20 @@ const formatTime = (totalSeconds: number): string => {
 const OTP_LENGTH = 6;
 const OTP_EXPIRATION_SECONDS = 600; // 10 minutes
 const RESEND_COOLDOWN_SECONDS = 60; // 1 minute
-// Code "magique" pour simuler un succès (en prod : appel API)
-const MOCK_VALID_CODE = "123456";
 
 const OtpVerificationPage: React.FC = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const email = location.state?.email || "";
+
+  // Si pas d'email dans le state, rediriger vers register
+  useEffect(() => {
+    if (!email) {
+      toast.error("Aucun email trouvé. Veuillez vous inscrire d'abord.");
+      navigate("/register");
+    }
+  }, [email, navigate]);
+
   // ---------- États ----------
   const [code, setCode] = useState<string[]>(Array(OTP_LENGTH).fill(""));
   const [timeLeft, setTimeLeft] = useState<number>(OTP_EXPIRATION_SECONDS);
@@ -68,7 +63,6 @@ const OtpVerificationPage: React.FC = () => {
   const [success, setSuccess] = useState<boolean>(false);
   const [shake, setShake] = useState<boolean>(false);
 
-  const userEmail = useRef<string>(getUserEmail());
   const inputsRef = useRef<Array<HTMLInputElement | null>>([]);
 
   // ---------- Effets : timers ----------
@@ -168,10 +162,13 @@ const OtpVerificationPage: React.FC = () => {
 
   // Soumission du code
   const handleSubmit = useCallback(
-    (e?: React.FormEvent) => {
+    async (e?: React.FormEvent) => {
       if (e) e.preventDefault();
       const fullCode = code.join("");
-      if (fullCode.length !== OTP_LENGTH) return;
+      if (fullCode.length !== OTP_LENGTH) {
+        toast.error("Veuillez entrer les 6 chiffres du code");
+        return;
+      }
       if (timeLeft <= 0) {
         setError("Le code a expiré. Demande un nouveau code.");
         triggerShake();
@@ -181,48 +178,86 @@ const OtpVerificationPage: React.FC = () => {
       setIsLoading(true);
       setError(null);
 
-      // Simulation d'un appel API (1.5s)
-      window.setTimeout(() => {
-        setIsLoading(false);
-        if (fullCode === MOCK_VALID_CODE) {
-          // ✅ Succès
-          setSuccess(true);
-          // eslint-disable-next-line no-console
-          console.log("[OTP] Code vérifié avec succès :", fullCode);
-        } else {
-          // ❌ Échec : shake + message
-          setError("Code incorrect. Vérifie et réessaie.");
-          triggerShake();
-          setCode(Array(OTP_LENGTH).fill(""));
+      try {
+        const response = await authService.verifyOtp({ email, code: fullCode });
+        
+        // Le backend retourne accessToken + refreshToken + user
+        const authData = response.data;
+        
+        // Stocker dans le authStore Zustand
+        // (Assuming authStore signature is: login(user, accessToken, refreshToken))
+        useAuthStore.getState().login(authData.user, authData.accessToken, authData.refreshToken);
+        
+        // Stocker aussi en localStorage pour axios interceptor
+        localStorage.setItem("accessToken", authData.accessToken);
+        localStorage.setItem("refreshToken", authData.refreshToken);
+        
+        toast.success(`Bienvenue ${authData.user.fullName} ! 🎉`);
+        setSuccess(true);
+        
+        // Animation success si déjà présente, sinon redirection
+        setTimeout(() => {
+          if (authData.user.role === "ADMIN") navigate("/admin");
+          else navigate("/dashboard");
+        }, 800);
+        
+      } catch (error: unknown) {
+        const err = error as any;
+        const msg = err.response?.data?.message || "Code OTP invalide ou expiré";
+        toast.error(msg);
+        
+        // Animation shake si présente, sinon juste reset error state
+        setError(msg);
+        triggerShake();
+        
+        // Reset les inputs et focus le premier
+        setCode(["", "", "", "", "", ""]);
+        setTimeout(() => {
           inputsRef.current[0]?.focus();
-        }
-      }, 1500);
+        }, 100);
+      } finally {
+        setIsLoading(false);
+      }
     },
-    [code, timeLeft, triggerShake]
+    [code, timeLeft, triggerShake, email, navigate]
   );
 
   // Renvoi du code
-  const handleResend = useCallback(() => {
+  const handleResend = useCallback(async () => {
     if (resendCooldown > 0 || isResending) return;
+    
     setIsResending(true);
     setError(null);
-
-    window.setTimeout(() => {
-      setIsResending(false);
+    try {
+      await authService.resendOtp(email);
+      toast.success("Nouveau code envoyé ! Vérifie ta boîte mail.");
+      
+      // Reset le timer du code OTP à 10 minutes (600 secondes)
       setTimeLeft(OTP_EXPIRATION_SECONDS);
+      
+      // Démarrer le cooldown de 60 secondes
       setResendCooldown(RESEND_COOLDOWN_SECONDS);
-      setCode(Array(OTP_LENGTH).fill(""));
+      
+      // Reset les inputs
+      setCode(["", "", "", "", "", ""]);
       inputsRef.current[0]?.focus();
-      // eslint-disable-next-line no-console
-      console.log("[OTP] Nouveau code envoyé à", userEmail.current);
-    }, 800);
-  }, [resendCooldown, isResending]);
+      
+    } catch (error: unknown) {
+      const err = error as any;
+      const msg = err.response?.data?.message || "Impossible de renvoyer le code";
+      toast.error(msg);
+    } finally {
+      setIsResending(false);
+    }
+  }, [resendCooldown, isResending, email]);
 
   // Auto-submit dès que les 6 cases sont remplies (UX fluide)
   useEffect(() => {
     const filled = code.every((c) => c !== "");
     if (filled && !isLoading && !success) {
-      handleSubmit();
+      setTimeout(() => {
+        handleSubmit();
+      }, 0);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [code]);
@@ -236,7 +271,7 @@ const OtpVerificationPage: React.FC = () => {
 
   // ---------- Render ----------
   return (
-    <div className="min-h-screen w-full bg-[#0a0a0f] text-white overflow-hidden relative font-sans">
+    <div className="min-h-screen w-full bg-background text-foreground overflow-hidden relative font-sans">
       {/* Halos d'ambiance globaux */}
       <div className="pointer-events-none fixed inset-0 z-0">
         <div className="absolute -top-40 -left-40 w-[36rem] h-[36rem] rounded-full bg-indigo-600/20 blur-[120px]" />
@@ -263,7 +298,7 @@ const OtpVerificationPage: React.FC = () => {
             </a>
             <a
               href="#"
-              className="group inline-flex items-center gap-2 text-sm text-white/60 hover:text-white transition-colors"
+              className="group inline-flex items-center gap-2 text-sm text-foreground/60 hover:text-foreground transition-colors"
             >
               <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
               Retour
@@ -284,11 +319,11 @@ const OtpVerificationPage: React.FC = () => {
                   Vérification{" "}
                   <span className="inline-block">📧</span>
                 </h1>
-                <p className="text-white/60 text-base">
+                <p className="text-foreground/60 text-base">
                   Un code à 6 chiffres a été envoyé à
                 </p>
                 <p className="mt-1 font-semibold text-lg bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-transparent break-all">
-                  {userEmail.current}
+                  {email}
                 </p>
               </motion.div>
 
@@ -297,7 +332,7 @@ const OtpVerificationPage: React.FC = () => {
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.2 }}
-                className="relative rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur-2xl shadow-[0_8px_60px_-12px_rgba(124,58,237,0.35)] p-7 sm:p-8 overflow-hidden"
+                className="relative rounded-3xl border border-foreground/10 bg-foreground/[0.03] backdrop-blur-2xl shadow-[0_8px_60px_-12px_rgba(124,58,237,0.35)] p-7 sm:p-8 overflow-hidden"
               >
                 {/* Liseré gradient en haut de la card */}
                 <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-violet-400/60 to-transparent" />
@@ -340,17 +375,17 @@ const OtpVerificationPage: React.FC = () => {
                             w-11 h-12 sm:w-14 sm:h-14
                             rounded-xl text-center
                             font-black text-2xl sm:text-3xl
-                            bg-white/[0.04] text-white
+                            bg-foreground/[0.04] text-foreground
                             border-2
                             ${error
                               ? "border-pink-500/60"
                               : digit
                                 ? "border-violet-500/70"
-                                : "border-white/10"
+                                : "border-foreground/10"
                             }
                             focus:outline-none
                             focus:border-violet-400
-                            focus:bg-white/[0.07]
+                            focus:bg-foreground/[0.07]
                             focus:shadow-[0_0_0_4px_rgba(139,92,246,0.18),0_0_30px_-2px_rgba(139,92,246,0.55)]
                             transition-all duration-200
                             disabled:opacity-60 disabled:cursor-not-allowed
@@ -368,7 +403,7 @@ const OtpVerificationPage: React.FC = () => {
                           ? "text-pink-400"
                           : isUrgent
                             ? "text-pink-400"
-                            : "text-white/50"
+                            : "text-foreground/50"
                         }`}
                     />
                     {isExpired ? (
@@ -380,7 +415,7 @@ const OtpVerificationPage: React.FC = () => {
                         className={
                           isUrgent
                             ? "text-pink-400 font-medium"
-                            : "text-white/60"
+                            : "text-foreground/60"
                         }
                       >
                         Le code expire dans{" "}
@@ -441,7 +476,7 @@ const OtpVerificationPage: React.FC = () => {
                   </button>
 
                   {/* Lien Renvoyer */}
-                  <div className="text-center text-sm text-white/50 pt-1">
+                  <div className="text-center text-sm text-foreground/50 pt-1">
                     Pas reçu de code ?{" "}
                     {canResend ? (
                       <button
@@ -453,12 +488,12 @@ const OtpVerificationPage: React.FC = () => {
                         Renvoyer le code
                       </button>
                     ) : isResending ? (
-                      <span className="inline-flex items-center gap-1.5 text-white/40">
+                      <span className="inline-flex items-center gap-1.5 text-foreground/40">
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
                         Envoi...
                       </span>
                     ) : (
-                      <span className="text-white/40 font-mono">
+                      <span className="text-foreground/40 font-mono">
                         Renvoyer dans {formatTime(resendCooldown)}
                       </span>
                     )}
@@ -574,7 +609,7 @@ const OtpVerificationPage: React.FC = () => {
               <h2 className="text-3xl font-black tracking-tight mb-2">
                 Un email vient d'arriver
               </h2>
-              <p className="text-white/60 text-base mb-10">
+              <p className="text-foreground/60 text-base mb-10">
                 Vérifie ta boîte de réception
               </p>
 
@@ -590,12 +625,12 @@ const OtpVerificationPage: React.FC = () => {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.6 + idx * 0.1 }}
-                    className="flex flex-col items-center gap-1.5 px-3 py-3 rounded-xl border border-white/10 bg-white/[0.03] backdrop-blur-md"
+                    className="flex flex-col items-center gap-1.5 px-3 py-3 rounded-xl border border-foreground/10 bg-foreground/[0.03] backdrop-blur-md"
                   >
                     <span className="text-xl" aria-hidden>
                       {item.emoji}
                     </span>
-                    <span className="text-[11px] font-medium text-white/70 text-center leading-tight">
+                    <span className="text-[11px] font-medium text-foreground/70 text-center leading-tight">
                       {item.label}
                     </span>
                   </motion.div>

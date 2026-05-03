@@ -63,12 +63,8 @@ export default function EasyVoteLogin() {
 
       toast.success("Connexion réussie ! Bienvenue " + authData.user.fullName);
 
-      // Redirect based on role
-      if (authData.user.role === "ADMIN") {
-        navigate("/admin");
-      } else {
-        navigate("/dashboard");
-      }
+      // Redirect to dashboard (handles all roles)
+      navigate("/dashboard");
     } catch (error: any) {
       const msg =
         error.response?.data?.message ||

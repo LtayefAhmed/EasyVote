@@ -20,4 +20,10 @@ public interface CandidateRepository extends JpaRepository<Candidate, Long> {
     List<Candidate> findByStatus(CandidateStatus status);
 
     long countByElectionIdAndStatus(Long electionId, CandidateStatus status);
+
+    long countByElectionId(Long electionId);
+
+    boolean existsByUserIdAndElectionId(Long userId, Long electionId);
+
+    List<Candidate> findByUserId(Long userId);
 }

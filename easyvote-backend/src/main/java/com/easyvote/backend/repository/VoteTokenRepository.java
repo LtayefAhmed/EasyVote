@@ -14,4 +14,6 @@ public interface VoteTokenRepository extends JpaRepository<VoteToken, Long> {
     Optional<VoteToken> findByTokenHash(String tokenHash);
 
     boolean existsByUserIdAndElectionIdAndUsedTrue(Long userId, Long electionId);
+
+    boolean existsByElectionId(Long electionId);
 }

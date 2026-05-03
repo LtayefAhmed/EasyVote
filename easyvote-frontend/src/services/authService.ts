@@ -33,5 +33,10 @@ export const authService = {
   getMe: async (): Promise<ApiResponse<UserSummary>> => {
     const response = await api.get("/auth/me")
     return response.data
+  },
+
+  getAllUsers: async (): Promise<ApiResponse<UserSummary[]>> => {
+    const response = await api.get("/admin/users")
+    return response.data
   }
 }

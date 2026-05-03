@@ -4,7 +4,7 @@
 ### ════════════════════════════════════════════════
 
 @baseUrl = http://localhost:8082/api
-@email = ahmed@test.com
+@email = moez@test.com
 @password = password123
 
 ### 1. Register - Création de compte
@@ -14,8 +14,8 @@ Content-Type: application/json
 {
   "email": "{{email}}",
   "password": "{{password}}",
-  "fullName": "Ahmed Ltayef",
-  "studentId": "STU001"
+  "fullName": "Moez Kaabi",
+  "studentId": "STU005"
 }
 
 ### 2. Verify OTP - Remplace 123456 par le code reçu dans Mailtrap
@@ -24,7 +24,7 @@ Content-Type: application/json
 
 {
   "email": "{{email}}",
-  "code": "422384"
+  "code": "783625"
 }
 
 ### 3. Login
@@ -45,7 +45,7 @@ Content-Type: application/json
 }
 
 ### 5. Get current user (collez le accessToken de la réponse login/verify-otp)
-@accessToken = eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhaG1lZEB0ZXN0LmNvbSIsInVzZXJJZCI6MSwicm9sZSI6IlNUVURFTlQiLCJmdWxsTmFtZSI6IkFobWVkIEx0YXllZiIsImlhdCI6MTc3NzYxMTg1OCwiZXhwIjoxNzc3Njk4MjU4fQ.SIrEG8RCiVlspa_0EYHrT8BY3aUKwjbq03Ba6qn2rCAhlrvy_0ObbmW7YbJ55tWPlTr5CkBzE85PwInR_hAJPg
+@accessToken = eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhaG1lZEB0ZXN0LmNvbSIsInVzZXJJZCI6MSwicm9sZSI6IkFETUlOIiwiZnVsbE5hbWUiOiJBaG1lZCBMdGF5ZWYiLCJpYXQiOjE3Nzc3NDU3MjQsImV4cCI6MTc3NzgzMjEyNH0.8fmok8hAIGWAVjVtuLTSfj0w_B1hdcoctA1JmgAFqU2oTev826my6gPjCvHQHz2hdSzrQVjNi8YA3oYHotP6Bw
 
 GET {{baseUrl}}/auth/me
 Authorization: Bearer {{accessToken}}
@@ -57,3 +57,318 @@ Content-Type: application/json
 {
   "refreshToken": "COLLE_LE_REFRESH_TOKEN_ICI"
 }
+
+### ════════════════════════════════════════════════
+### MODULE 1 - CAMPAGNES ÉLECTORALES
+### ════════════════════════════════════════════════
+
+@adminToken = eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhaG1lZEB0ZXN0LmNvbSIsInVzZXJJZCI6MSwicm9sZSI6IkFETUlOIiwiZnVsbE5hbWUiOiJBaG1lZCBMdGF5ZWYiLCJpYXQiOjE3Nzc3NjA1ODcsImV4cCI6MTc3Nzg0Njk4N30.s85kyhejfAgmvEoCaTQ9kVyA0RJElLhhyJPhUqt3NWBnLnEGzHN0EOpjPqoz3gKFcqu9KlM8FbDtFi0MhPjq9Q
+@studentToken = eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJtb2V6QHRlc3QuY29tIiwidXNlcklkIjo3LCJyb2xlIjoiU1RVREVOVCIsImZ1bGxOYW1lIjoiTW9leiBLYWFiaSIsImlhdCI6MTc3Nzc2MTAwMywiZXhwIjoxNzc3ODQ3NDAzfQ.1SU4yn2tabp6VuOpOVBvThtS3uJeEtokX2r7sbpgb_NUqwY9x5vh21FbMl_Zw4C6CLE_eAMMtIeDzkwZhHgPlw
+
+### 7. Créer une élection (ADMIN)
+POST {{baseUrl}}/elections
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "title": "Élections du Bureau Étudiant 2026",
+  "description": "Élisez vos représentants pour l'année universitaire à venir",
+  "campaignStart": "2026-05-05T08:00:00",
+  "campaignEnd": "2026-05-15T20:00:00",
+  "voteStart": "2026-05-16T08:00:00",
+  "voteEnd": "2026-05-18T20:00:00"
+}
+
+### 8. Lister toutes les élections
+GET {{baseUrl}}/elections
+Authorization: Bearer {{accessToken}}
+
+### 9. Élections actives
+GET {{baseUrl}}/elections/active
+Authorization: Bearer {{accessToken}}
+
+### 10. Détail élection (ID=1)
+GET {{baseUrl}}/elections/1
+Authorization: Bearer {{accessToken}}
+
+### 11. Modifier une élection (ADMIN)
+PUT {{baseUrl}}/elections/1
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "title": "Élections BDE 2026 - Mis à jour"
+}
+
+### 12. Changer statut élection (ADMIN)
+PATCH {{baseUrl}}/elections/2/status
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "status": "CAMPAIGN_ACTIVE"
+}
+
+### 13. Déposer une candidature (STUDENT)
+POST {{baseUrl}}/candidates/apply
+Authorization: Bearer {{studentToken}}
+Content-Type: application/json
+
+{
+  "electionId": 2,
+  "slogan": "Une voix pour tous, un changement pour chacun",
+  "program": "Mon programme propose 5 axes : 1) Amélioration des conditions d'études, 2) Développement de la vie associative, 3) Modernisation des infrastructures, 4) Plus d'événements culturels, 5) Renforcement du dialogue avec l'administration."
+}
+
+### 14. Lister candidats d'une élection
+GET {{baseUrl}}/candidates/by-election/1
+Authorization: Bearer {{accessToken}}
+
+### 15. Ma candidature pour une élection
+GET {{baseUrl}}/candidates/my/1
+Authorization: Bearer {{studentToken}}
+
+### 16. Candidatures en attente (ADMIN)
+GET {{baseUrl}}/candidates/admin/pending
+Authorization: Bearer {{adminToken}}
+
+### 17. Valider une candidature (ADMIN)
+POST {{baseUrl}}/candidates/2/validate
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "status": "VALIDATED"
+}
+
+### 18. Rejeter une candidature (ADMIN)
+POST {{baseUrl}}/candidates/2/validate
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "status": "REJECTED",
+  "adminNote": "Programme incomplet"
+}
+
+### 19. Détail d'un candidat
+GET {{baseUrl}}/candidates/1
+Authorization: Bearer {{accessToken}}
+
+### 20. Supprimer une élection (ADMIN, DRAFT only)
+DELETE {{baseUrl}}/elections/1
+Authorization: Bearer {{adminToken}}
+
+### ════════════════════════════════════════════════
+### MODULE 1 - ENGAGEMENT SOCIAL
+### ════════════════════════════════════════════════
+
+@candidateToken = REMPLACER_PAR_TOKEN_CANDIDATE
+
+### 21. Liker un candidat (toggle)
+POST {{baseUrl}}/candidates/1/like
+Authorization: Bearer {{studentToken}}
+
+### 22. Poster un commentaire
+POST {{baseUrl}}/candidates/1/comments
+Authorization: Bearer {{studentToken}}
+Content-Type: application/json
+
+{
+  "content": "Très bon programme, j'apprécie particulièrement le point 3 sur la modernisation des infrastructures."
+}
+
+### 23. Lister les commentaires d'un candidat
+GET {{baseUrl}}/candidates/1/comments
+Authorization: Bearer {{studentToken}}
+
+### 24. Supprimer un commentaire
+DELETE {{baseUrl}}/candidates/1/comments/1
+Authorization: Bearer {{studentToken}}
+
+### 25. Poser une question
+POST {{baseUrl}}/candidates/1/questions
+Authorization: Bearer {{studentToken}}
+Content-Type: application/json
+
+{
+  "content": "Comment comptez-vous financer le développement des infrastructures sportives ?"
+}
+
+### 26. Lister toutes les questions
+GET {{baseUrl}}/candidates/1/questions
+Authorization: Bearer {{studentToken}}
+
+### 27. Lister uniquement les questions répondues
+GET {{baseUrl}}/candidates/1/questions?answeredOnly=true
+Authorization: Bearer {{studentToken}}
+
+### 28. Le candidat répond à une question
+POST {{baseUrl}}/candidates/1/questions/1/answer
+Authorization: Bearer {{candidateToken}}
+Content-Type: application/json
+
+{
+  "answer": "Excellente question ! Je propose de mobiliser le budget alloué via une réorganisation des subventions actuelles, plus un partenariat avec les sponsors locaux."
+}
+
+### 29. Créer une annonce de campagne (CANDIDATE)
+POST {{baseUrl}}/candidates/1/announcements
+Authorization: Bearer {{candidateToken}}
+Content-Type: application/json
+
+{
+  "title": "Réunion publique ce vendredi !",
+  "content": "Je vous invite tous à une réunion publique vendredi 12 mai à 18h dans l'amphi B. Venez nombreux pour échanger sur le programme."
+}
+
+### 30. Lister les annonces d'un candidat
+GET {{baseUrl}}/candidates/1/announcements
+Authorization: Bearer {{studentToken}}
+
+### 31. Mettre à jour une annonce
+PUT {{baseUrl}}/candidates/1/announcements/1
+Authorization: Bearer {{candidateToken}}
+Content-Type: application/json
+
+{
+  "title": "Réunion publique REPORTÉE à samedi !",
+  "content": "Petit changement : la réunion est reportée à samedi 13 mai à 18h. Lieu inchangé."
+}
+
+### 32. Supprimer une annonce
+DELETE {{baseUrl}}/candidates/1/announcements/1
+Authorization: Bearer {{candidateToken}}
+
+### ════════════════════════════════════════════════
+### MODULE 2 - VOTE ÉLECTRONIQUE
+### ════════════════════════════════════════════════
+
+### Admin: générer tokens pour tous les électeurs
+POST {{baseUrl}}/admin/elections/2/generate-tokens
+Authorization: Bearer {{adminToken}}
+
+### Admin: changer status élection vers VOTE_ACTIVE
+PATCH {{baseUrl}}/elections/2/status
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "status": "VOTE_ACTIVE"
+}
+
+### Étudiant: vérifier son statut de vote
+GET {{baseUrl}}/elections/1/vote/status
+Authorization: Bearer {{studentToken}}
+
+### Étudiant: voter pour un candidat
+POST {{baseUrl}}/elections/1/vote
+Authorization: Bearer {{studentToken}}
+Content-Type: application/json
+
+{
+  "candidateId": 1
+}
+
+### Étudiant: tenter de voter à nouveau (doit échouer)
+POST {{baseUrl}}/elections/1/vote
+Authorization: Bearer {{studentToken}}
+Content-Type: application/json
+
+{
+  "candidateId": 1
+}
+
+### Tous: voir les résultats
+GET {{baseUrl}}/elections/1/results
+Authorization: Bearer {{studentToken}}
+
+### Admin: voir les stats live
+GET {{baseUrl}}/admin/elections/1/stats
+Authorization: Bearer {{adminToken}}
+
+### Tous: exporter PDF des résultats
+GET {{baseUrl}}/elections/1/results/pdf
+Authorization: Bearer {{adminToken}}
+
+### ════════════════════════════════════════════════
+### MODULE 3 - CHATBOT
+### ════════════════════════════════════════════════
+
+### Envoyer un message au chatbot - règle salutation
+POST {{baseUrl}}/chatbot/message
+Authorization: Bearer {{studentToken}}
+Content-Type: application/json
+
+{
+  "message": "Bonjour"
+}
+
+### Demander comment voter
+POST {{baseUrl}}/chatbot/message
+Authorization: Bearer {{studentToken}}
+Content-Type: application/json
+
+{
+  "message": "Comment je peux voter ?"
+}
+
+### Demander les candidats
+POST {{baseUrl}}/chatbot/message
+Authorization: Bearer {{studentToken}}
+Content-Type: application/json
+
+{
+  "message": "Qui sont les candidats ?"
+}
+
+### Question hors-sujet (test fallback IA ou rules default)
+POST {{baseUrl}}/chatbot/message
+Authorization: Bearer {{studentToken}}
+Content-Type: application/json
+
+{
+  "message": "Quelle est la météo à Tunis ?"
+}
+
+### Conversation avec sessionId persistant
+POST {{baseUrl}}/chatbot/message
+Authorization: Bearer {{studentToken}}
+Content-Type: application/json
+
+{
+  "message": "Merci pour les infos",
+  "sessionId": "session-test-123"
+}
+
+### Récupérer historique d'une session
+GET {{baseUrl}}/chatbot/sessions/session-test-123
+Authorization: Bearer {{studentToken}}
+
+### Historique récent (20 derniers messages)
+GET {{baseUrl}}/chatbot/history
+Authorization: Bearer {{studentToken}}
+
+### ════════════════════════════════════════════════
+### NOTIFICATIONS
+### ════════════════════════════════════════════════
+
+### Mes notifications
+GET {{baseUrl}}/notifications
+Authorization: Bearer {{studentToken}}
+
+### Notifications non lues
+GET {{baseUrl}}/notifications/unread
+Authorization: Bearer {{studentToken}}
+
+### Compteur de non lues
+GET {{baseUrl}}/notifications/unread/count
+Authorization: Bearer {{studentToken}}
+
+### Marquer une notif comme lue
+PUT {{baseUrl}}/notifications/1/read
+Authorization: Bearer {{studentToken}}
+
+### Marquer toutes comme lues
+PUT {{baseUrl}}/notifications/read-all
+Authorization: Bearer {{studentToken}}
