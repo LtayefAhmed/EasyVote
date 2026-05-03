@@ -1,4 +1,5 @@
 # 🗳️ EasyVote
+
 *Plateforme web moderne de vote universitaire sécurisé*
 
 ![Java 21](https://img.shields.io/badge/Java-21-orange.svg)
@@ -106,6 +107,7 @@ cd EasyVote
    - Configuration Mailtrap : définissez `username` et `password`.
    - JWT secret : peut rester par défaut pour le développement local.
 4. Compiler le backend :
+
 ```bash
 cd easyvote-backend
 ./mvnw clean install
@@ -124,6 +126,7 @@ npm install
 Ouvrez deux terminaux à la racine de votre projet :
 
 **Terminal 1 - Backend (port 8082)**
+
 ```bash
 cd easyvote-backend
 ./mvnw spring-boot:run
@@ -131,6 +134,7 @@ cd easyvote-backend
 ```
 
 **Terminal 2 - Frontend (port 5173)**
+
 ```bash
 cd easyvote-frontend
 npm run dev
@@ -153,12 +157,14 @@ Puis ouvrez [http://localhost:5173](http://localhost:5173) dans votre navigateur
 L'architecture d'EasyVote est **stateless, scalable et sécurisée**.
 
 ### Architecture en couches du backend
+
 - **Controller** : Gère les requêtes HTTP et valide les inputs (DTOs).
 - **Service** : Contient toute la logique métier complexe et transactionnelle.
 - **Repository** : Interfaces Spring Data JPA pour les interactions avec la base de données.
 - **Entity** : Modèles de données mappés aux tables de la base de données.
 
 ### Modules fonctionnels
+
 1. **Module Authentification & Sécurité** : Inscription avec OTP, JWT, rôles dynamiques.
 2. **Module Administration & Élections** : Paramétrage des dates, gestion des candidatures.
 3. **Module Étudiant & Engagement** : Votes sécurisés, suivi live, mur de campagne interactif.
@@ -270,6 +276,7 @@ EasyVote/
 ## 👤 Auteur
 
 **Ahmed Ltayef**
+
 - GitHub : [@ahmed-ltayef](https://github.com/ahmed-ltayef)
 - *Projet réalisé dans le cadre du module Génie Logiciel — 2026*
 
@@ -280,5 +287,4 @@ Ce projet est sous licence **MIT**. Voir le fichier [LICENSE](LICENSE) pour plus
 ## 🙏 Remerciements
 
 - À l'équipe pédagogique pour le cadrage du projet.
-- À Anthropic pour Claude (Code et Antigravity Agent).
 - À la communauté open-source pour les excellents frameworks utilisés.
